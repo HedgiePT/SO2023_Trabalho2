@@ -191,31 +191,41 @@ static void checkInAtReception(int id)
     // TODO insert your code here
     sh->fSt.st.groupStat[id] = ATRECEPTION; // Set state as soon as possible.
 
+    // Wait for receptionist to be ready and put his semaphore down.
     if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
+    // We can be sure we're the only one talking to the receptionist.
     sh->fSt.receptionistRequest = (request){ TABLEREQ, id };
 
+    // Signal that a request has been made.
     if (semUp(semgid, sh->receptionistReq) == -1) {
+        perror ("error on the up operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    // Wait for a table.
+    if (semDown (semgid, sh->waitForTable[id]) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
-    if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
+    // Do we have any reason to use this mutex?
+    /* 
+    if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    sh->fSt.groupsWaiting++;
-
-    if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
+    if (semUp (semgid, sh->mutex) == -1) {
         perror ("error on the up operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
+    */
 
     // TODO insert your code here
 
