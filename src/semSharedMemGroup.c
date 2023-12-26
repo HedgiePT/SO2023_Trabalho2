@@ -291,31 +291,45 @@ static void orderFood (int id)
  */
 static void waitFood (int id)
 {
-    if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
+    sh->fSt.st.groupStat[id] = WAIT_FOR_FOOD;
+
+    if (semDown (semgid, sh->foodArrived[id]) == -1) {
+        perror ("error waiting for food to be served. (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    sh->fSt.st.groupStat[id] = EAT;
+
+    // I *genuinely* don't know what we're supposed to use the mutex for;
+    // Let alone this many times.
+
+    /*
+    if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
+    if (semUp (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
+    if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
+    if (semUp (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
+    */
 }
 
 /**
@@ -332,6 +346,29 @@ static void waitFood (int id)
 static void checkOutAtReception (int id)
 {
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = CHECKOUT; // Set state as soon as possible.
+
+    // Wait for receptionist to be ready and put his semaphore down.
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    // We can be sure we're the only one talking to the receptionist.
+    sh->fSt.receptionistRequest = (request){ BILLREQ, id };
+
+    // Signal that a request has been made.
+    if (semUp(semgid, sh->receptionistReq) == -1) {
+        perror ("error on the up operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    if (semDown (semgid, sh->tableDone[id]) == -1) {
+        perror ("error waiting for payment to be complete (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    sh->fSt.st.groupStat[id] = LEAVING;
 
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
