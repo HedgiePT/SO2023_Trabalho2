@@ -189,8 +189,16 @@ static void eat (int id)
 static void checkInAtReception(int id)
 {
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = ATRECEPTION; // Set state as soon as possible.
 
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {                                                  /* enter critical region */
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
+    sh->fSt.receptionistRequest = (request){ TABLEREQ, id };
+
+    if (semUp(semgid, sh->receptionistReq) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
@@ -200,10 +208,9 @@ static void checkInAtReception(int id)
         exit (EXIT_FAILURE);
     }
 
-    sh->fSt.groupsWaiting++;
-    sh->fSt.st.groupStat[id] = ATRECEPTION;
-
     // TODO insert your code here
+
+    sh->fSt.groupsWaiting++;
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (CT)");
