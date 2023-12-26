@@ -190,10 +190,18 @@ static void checkInAtReception(int id)
 {
     // TODO insert your code here
 
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {                                                  /* enter critical region */
+        perror ("error on the down operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
+
+    sh->fSt.groupsWaiting++;
+    sh->fSt.st.groupStat[id] = ATRECEPTION;
 
     // TODO insert your code here
 

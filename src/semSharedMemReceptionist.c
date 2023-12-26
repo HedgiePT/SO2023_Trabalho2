@@ -189,6 +189,9 @@ static request waitForGroup()
 
     // TODO insert your code here
     
+    sh->fSt.st.receptionistStat = ASSIGNTABLE;
+    saveState(nFic, &(sh->fSt));
+    
     if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -201,7 +204,12 @@ static request waitForGroup()
         exit (EXIT_FAILURE);
     }
 
-    // TODO insert your code here
+    if (semDown (semgid, sh->receptionistReq) == -1)  {                                                  /* enter critical region */
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
+    
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
