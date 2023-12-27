@@ -189,7 +189,6 @@ static void eat (int id)
 static void checkInAtReception(int id)
 {
     // TODO insert your code here
-    sh->fSt.st.groupStat[id] = ATRECEPTION; // Set state as soon as possible.
 
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
@@ -197,6 +196,7 @@ static void checkInAtReception(int id)
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = ATRECEPTION;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
@@ -239,7 +239,6 @@ static void checkInAtReception(int id)
 static void orderFood (int id)
 {
     // TODO insert your code here
-    sh->fSt.st.groupStat[id] = FOOD_REQUEST;
 
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
@@ -247,6 +246,7 @@ static void orderFood (int id)
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = FOOD_REQUEST;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
@@ -287,7 +287,6 @@ static void orderFood (int id)
 static void waitFood (int id)
 {
     // I also added code here, but it wasn't marked.
-    sh->fSt.st.groupStat[id] = WAIT_FOR_FOOD;
 
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
@@ -295,6 +294,7 @@ static void waitFood (int id)
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = WAIT_FOR_FOOD;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
@@ -308,7 +308,6 @@ static void waitFood (int id)
     }
 
     // TODO insert your code here
-    sh->fSt.st.groupStat[id] = EAT;
 
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
@@ -316,6 +315,7 @@ static void waitFood (int id)
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = EAT;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
@@ -338,7 +338,6 @@ static void waitFood (int id)
 static void checkOutAtReception (int id)
 {
     // TODO insert your code here
-    sh->fSt.st.groupStat[id] = CHECKOUT; // Set state as soon as possible.
 
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
@@ -346,6 +345,7 @@ static void checkOutAtReception (int id)
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = CHECKOUT;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
@@ -375,14 +375,13 @@ static void checkOutAtReception (int id)
         exit (EXIT_FAILURE);
     }
 
-    sh->fSt.st.groupStat[id] = LEAVING;
-
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+    sh->fSt.st.groupStat[id] = LEAVING;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {
