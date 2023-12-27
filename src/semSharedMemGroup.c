@@ -191,12 +191,6 @@ static void checkInAtReception(int id)
     // TODO insert your code here
     sh->fSt.st.groupStat[id] = ATRECEPTION; // Set state as soon as possible.
 
-    // Wait for receptionist to be ready and put his semaphore down.
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
     if (semDown (semgid, sh->mutex) == -1) {
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -210,6 +204,11 @@ static void checkInAtReception(int id)
         exit (EXIT_FAILURE);
     }
 
+    // Wait for receptionist to be ready and put his semaphore down.
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
     // We can be sure we're the only one talking to the receptionist.
     sh->fSt.receptionistRequest = (request){ TABLEREQ, id };
 
@@ -369,7 +368,9 @@ static void checkOutAtReception (int id)
         exit (EXIT_FAILURE);
     }
 
-    if (semDown (semgid, sh->tableDone[id]) == -1) {
+    int table = sh->fSt.assignedTable[id];
+
+    if (semDown (semgid, sh->tableDone[table]) == -1) {
         perror ("error waiting for payment to be complete (CT)");
         exit (EXIT_FAILURE);
     }
