@@ -44,13 +44,15 @@ static int semgid;
 /** \brief pointer to shared memory region */
 static SHARED_DATA *sh;
 
+// Extra semaphore functions written by the students.
+#include "semDebug.h"
+
 static void goToRestaurant (int id);
 static void checkInAtReception (int id);
 static void orderFood (int id);
 static void waitFood (int id);
 static void eat (int id);
 static void checkOutAtReception (int id);
-
 
 /**
  *  \brief Main program.
@@ -104,6 +106,9 @@ int main (int argc, char *argv[])
     /* initialize random generator */
     srandom ((unsigned int) getpid ());                                                 
 
+#ifdef SEMDEBUG
+    semdebug_init(&sh->debug.groups[n]);
+#endif
 
     /* simulation of the life cycle of the group */
     goToRestaurant(n);
@@ -188,42 +193,19 @@ static void eat (int id)
  */
 static void checkInAtReception(int id)
 {
-    // TODO insert your code here
+    semDownOrExit(sh->mutex, "pre-ATRECEPTION.");
+        sh->fSt.st.groupStat[id] = ATRECEPTION;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit(sh->mutex, "ATRECEPTION & state saved.");
 
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    // Wait for receptionist to be ready by waiting on his semaphore.
+    semDownOrExit(sh->receptionistRequestPossible, "before writing request for table.");
 
-    // TODO insert your code here
-    sh->fSt.st.groupStat[id] = ATRECEPTION;
-    saveState(nFic, &sh->fSt);
-
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // Wait for receptionist to be ready and put his semaphore down.
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-    // We can be sure we're the only one talking to the receptionist.
+    // Now we can be sure we're the only one talking to the receptionist.
     sh->fSt.receptionistRequest = (request){ TABLEREQ, id };
 
-    // TODO insert your code here
-    // Signal that a request has been made.
-    if (semUp(semgid, sh->receptionistReq) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // Wait for a table.
-    if (semDown (semgid, sh->waitForTable[id]) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->receptionistReq, "requested a table to sit down.");
+    semDownOrExit(sh->waitForTable[id], "waiting to sit down at table.");
 }
 
 /**
@@ -238,41 +220,20 @@ static void checkInAtReception(int id)
  */
 static void orderFood (int id)
 {
-    // TODO insert your code here
-
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // TODO insert your code here
-    sh->fSt.st.groupStat[id] = FOOD_REQUEST;
-    saveState(nFic, &sh->fSt);
-
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit (sh->mutex, "pre-FOOD_REQUEST.");
+        sh->fSt.st.groupStat[id] = FOOD_REQUEST;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit (sh->mutex, "FOOD_REQUEST & state saved.");
     
     // ----------------------------- //
     // TODO insert your code here
 
-    if (semDown (semgid, sh->waiterRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-    
+    semDownOrExit(sh->waiterRequestPossible, "waiting for waiter before ordering food.");
     sh->fSt.waiterRequest = (request){ FOODREQ, id };
-    
-    if (semUp (semgid, sh->waiterRequest) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-    
-    if (semDown (semgid, sh->requestReceived[id]) == -1) {
-        perror ("error waiting for waiter's acknowledgement (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit (sh->waiterRequest, "finished writing food order.");
+
+    int table = sh->fSt.assignedTable[id];
+    semDownOrExit (sh->requestReceived[table], "waiting for waiter to receive our order.");
 }
 
 /**
@@ -286,42 +247,20 @@ static void orderFood (int id)
  */
 static void waitFood (int id)
 {
-    // I also added code here, but it wasn't marked.
-
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit (sh->mutex, "pre-WAIT_FOR_FOOD");
+        sh->fSt.st.groupStat[id] = WAIT_FOR_FOOD;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit (sh->mutex, "WAIT_FOR_FOOD & state saved.");
 
     // TODO insert your code here
-    sh->fSt.st.groupStat[id] = WAIT_FOR_FOOD;
-    saveState(nFic, &sh->fSt);
+    int table = sh->fSt.assignedTable[id];
 
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit (sh->foodArrived[table], "waiting for our food to arrive.");
 
-    if (semDown (semgid, sh->foodArrived[id]) == -1) {
-        perror ("error waiting for food to be served. (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // TODO insert your code here
-
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // TODO insert your code here
-    sh->fSt.st.groupStat[id] = EAT;
-    saveState(nFic, &sh->fSt);
-
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->mutex, "pre-EAT");
+        sh->fSt.st.groupStat[id] = EAT;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit(sh->mutex, "EAT & state saved.");
 }
 
 /**
@@ -339,53 +278,23 @@ static void checkOutAtReception (int id)
 {
     // TODO insert your code here
 
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->mutex, "pre-CHECKOUT");
+        sh->fSt.st.groupStat[id] = CHECKOUT;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit(sh->mutex, "CHECKOUT & state saved.");
 
-    // TODO insert your code here
-    sh->fSt.st.groupStat[id] = CHECKOUT;
-    saveState(nFic, &sh->fSt);
-
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // Wait for receptionist to be ready and put his semaphore down.
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->receptionistRequestPossible, "before requesting bill.");
 
     // We can be sure we're the only one talking to the receptionist.
     sh->fSt.receptionistRequest = (request){ BILLREQ, id };
-
-    // Signal that a request has been made.
-    if (semUp(semgid, sh->receptionistReq) == -1) {
-        perror ("error on the up operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->receptionistReq, "signaling bill requested.");
 
     int table = sh->fSt.assignedTable[id];
 
-    if (semDown (semgid, sh->tableDone[table]) == -1) {
-        perror ("error waiting for payment to be complete (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->tableDone[table], "waiting for receptionist to acknowledge payment.");
 
-    if (semDown (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // TODO insert your code here
-    sh->fSt.st.groupStat[id] = LEAVING;
-    saveState(nFic, &sh->fSt);
-
-    if (semUp (semgid, sh->mutex) == -1) {
-        perror ("error on the down operation for semaphore access (CT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->mutex, "pre-LEAVING");
+        sh->fSt.st.groupStat[id] = LEAVING;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit(sh->mutex, "group left restaurant & state saved.");
 }

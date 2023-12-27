@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -ggdb #-DSEMDEBUG
 
 SUFFIX = $(shell getconf LONG_BIT)
 
