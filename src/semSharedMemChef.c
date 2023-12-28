@@ -155,6 +155,11 @@ static void waitForOrder ()
         exit (EXIT_FAILURE);
     }
 
+    if (semUp (semgid, sh->orderReceived) == -1) {                                                      /* exit critical region */
+        perror ("error on the up operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
+
 
 }
 
@@ -172,13 +177,16 @@ static void processOrder ()
 
     //TODO insert your code here
 
+    semDownOrExit(sh->waiterRequestPossible, "waiting for waiter before ordering food.");
+
+    sh->fSt.waiterRequest.reqType = FOODREADY;
+
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
-    sh->fSt.waiterRequest.reqType = FOODREADY;
     saveState(nFic, &(sh->fSt));
 
     //TODO insert your code here
