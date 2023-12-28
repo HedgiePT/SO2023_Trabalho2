@@ -276,7 +276,9 @@ static void waitFood (int id)
  */
 static void checkOutAtReception (int id)
 {
-    // TODO insert your code here
+    // Get table first; I have the suspicion the table info was getting swiped
+    // from under our feet.
+    int table = sh->fSt.assignedTable[id];
 
     semDownOrExit(sh->mutex, "pre-CHECKOUT");
         sh->fSt.st.groupStat[id] = CHECKOUT;
@@ -289,7 +291,6 @@ static void checkOutAtReception (int id)
     sh->fSt.receptionistRequest = (request){ BILLREQ, id };
     semUpOrExit(sh->receptionistReq, "signaling bill requested.");
 
-    int table = sh->fSt.assignedTable[id];
 
     semDownOrExit(sh->tableDone[table], "waiting for receptionist to acknowledge payment.");
 
