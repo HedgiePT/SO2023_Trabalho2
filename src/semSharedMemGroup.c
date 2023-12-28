@@ -290,8 +290,6 @@ static void checkOutAtReception (int id)
     // We can be sure we're the only one talking to the receptionist.
     sh->fSt.receptionistRequest = (request){ BILLREQ, id };
     semUpOrExit(sh->receptionistReq, "signaling bill requested.");
-
-
     semDownOrExit(sh->tableDone[table], "waiting for receptionist to acknowledge payment.");
 
     semDownOrExit(sh->mutex, "pre-LEAVING");

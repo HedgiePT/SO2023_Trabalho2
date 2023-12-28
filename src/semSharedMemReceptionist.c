@@ -42,6 +42,8 @@ static int semgid;
 /** \brief pointer to shared memory region */
 static SHARED_DATA *sh;
 
+#include "semDebug.h"
+
 /* constants for groupRecord */
 #define TOARRIVE 0
 #define WAIT     1
@@ -105,6 +107,10 @@ int main (int argc, char *argv[])
         perror ("error on mapping the shared region on the process address space");
         return EXIT_FAILURE;
     }
+
+#ifdef SEMDEBUG
+    semdebug_init(&sh->debug.receptionist);
+#endif
 
     /* initialize random generator */
     srandom ((unsigned int) getpid ());              

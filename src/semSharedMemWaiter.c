@@ -42,6 +42,9 @@ static int semgid;
 /** \brief pointer to shared memory region */
 static SHARED_DATA *sh;
 
+// Made by the students.
+#include "semDebug.h"
+
 /** \brief waiter waits for next request */
 static request waitForClientOrChef ();
 
@@ -96,6 +99,10 @@ int main (int argc, char *argv[])
         perror ("error on mapping the shared region on the process address space");
         return EXIT_FAILURE;
     }
+
+#ifdef SEMDEBUG
+    semdebug_init(&sh->debug.chef);
+#endif
 
     /* initialize random generator */
     srandom ((unsigned int) getpid ());              

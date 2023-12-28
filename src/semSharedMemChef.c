@@ -47,6 +47,9 @@ static int lastGroup;
 /** \brief pointer to shared memory region */
 static SHARED_DATA *sh;
 
+// Extra semaphore functions written by the students.
+#include "semDebug.h"
+
 static void waitForOrder ();
 static void processOrder ();
 
@@ -92,6 +95,10 @@ int main (int argc, char *argv[])
         perror ("error on mapping the shared region on the process address space");
         return EXIT_FAILURE;
     }
+
+#ifdef SEMDEBUG
+    semdebug_init(&sh->debug.chef);
+#endif
 
     /* initialize random generator */
     srandom ((unsigned int) getpid ());                                      
