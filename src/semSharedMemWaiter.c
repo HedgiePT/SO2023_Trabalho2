@@ -159,6 +159,8 @@ static request waitForClientOrChef()
         exit (EXIT_FAILURE);
     }
 
+    sh->fSt.waiterRequest.reqType = 0;  // Clear request before receiving new one.
+
      if (semUp (semgid, sh->waiterRequestPossible) == -1)      {                                             /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -174,10 +176,8 @@ static request waitForClientOrChef()
         exit (EXIT_FAILURE);
     }
 
-   
-    req = sh->fSt.waiterRequest;
 
-    sh->fSt.waiterRequest.reqType = 0;
+    req = sh->fSt.waiterRequest;
 
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
