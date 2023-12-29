@@ -166,9 +166,9 @@ static const char *get_waiter_stage_label(int stage)
 {
     switch (stage)
     {
-        case 0: return "WAIT_FOR_ORDER";
-        case 1: return "COOK";
-        case 2: return "REST";
+        case 0: return "WAIT_FOR_REQST";
+        case 1: return "INFORM_CHEF";
+        case 2: return "TAKE_TO_TABLE";
         default: return "";
     }
 }
