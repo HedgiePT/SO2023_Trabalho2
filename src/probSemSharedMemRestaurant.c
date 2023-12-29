@@ -31,6 +31,8 @@
 #include "semaphore.h"
 #include "sharedMemory.h"
 
+#include "semDebug_sharedDataSync.h"
+
 /** \brief name of chef process */
 #define   CHEF               "./chef"
 
@@ -42,6 +44,8 @@
 
 /** \brief name of chef process */
 #define   RECEPTIONIST       "./receptionist"
+
+
 /**
  *  \brief Main program.
  *
@@ -207,6 +211,18 @@ int main (int argc, char *argv[])
             exit (EXIT_FAILURE);
         }
 
+    /* Timer process */
+    int pidTimer = fork();
+    if (pidTimer < 0) {
+        perror ("error on the generation of the timer process");
+        exit (EXIT_FAILURE);
+    }
+    
+    if (pidTimer == 0) {
+        sleep(10);
+        exit (EXIT_SUCCESS);
+    }
+
     /* signaling start of operations */
     if (semSignal (semgid) == -1) {
         perror ("error on signaling start of operations");
@@ -220,9 +236,18 @@ int main (int argc, char *argv[])
         if (info == -1) { 
             perror ("error on aiting for an intervening process");
             exit (EXIT_FAILURE);
+        } else if (info == pidTimer) {
+            /* We're in a deadlock. */
+            semdebug_print_deadlock(&sh->debug, &sh->fSt, semgid);
+            
+            kill(pidCH, SIGTERM); kill(pidWT, SIGTERM); kill(pidRT, SIGTERM);
+            for (int i = 0; i < sh->fSt.nGroups; i++) kill(pidGR[i], SIGTERM);
+            break;
         }
         m += 1;
     } while (m < 3+sh->fSt.nGroups);
+    
+    kill(pidTimer, SIGTERM);
 
     /* destruction of semaphore set and shared region */
     if (semDestroy (semgid) == -1) {
