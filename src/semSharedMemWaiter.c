@@ -101,7 +101,7 @@ int main (int argc, char *argv[])
     }
 
 #ifdef SEMDEBUG
-    semdebug_init(&sh->debug.chef);
+    semdebug_init(&sh->debug.waiter);
 #endif
 
     /* initialize random generator */
