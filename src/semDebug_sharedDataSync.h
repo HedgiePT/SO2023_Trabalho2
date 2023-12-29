@@ -51,6 +51,7 @@ size_t semdebug_getAllEvSorted(const struct semdebug_buff *in, struct semdebug_e
     if (!(in && out))
         return false;
 
+    struct semdebug_event *outslot = out;
     size_t nWritten = 0;
 
     for (size_t i = 0; i < SEMDEBUG_MAX_EVENTS; i++)
@@ -61,7 +62,7 @@ size_t semdebug_getAllEvSorted(const struct semdebug_buff *in, struct semdebug_e
         if (ev->action == SEMDEBUG_UNDEFINED)
             continue;
 
-        out[i] = *ev;
+        *(outslot++) = *ev;
         nWritten++;
     }
 
@@ -208,6 +209,7 @@ bool semdebug_getProcDiagnostics(const struct semdebug *sd, const FULL_STAT *fd,
     out->ch.stage = fd->st.chefStat;
     snprintf(buf, sizeof(buf)/sizeof(buf[0]), "/proc/%d", out->ch.pid);
     out->ch.exited = (bool)(!opendir(buf));
+    out->ch.n_events = semdebug_getAllEvSorted(&sd->chef, out->ch.events);
     out->ch.last_event = out->ch.n_events ?
         &out->ch.events[out->ch.n_events - 1] : NULL;
     
@@ -215,6 +217,7 @@ bool semdebug_getProcDiagnostics(const struct semdebug *sd, const FULL_STAT *fd,
     out->wt.stage = fd->st.waiterStat;
     snprintf(buf, sizeof(buf)/sizeof(buf[0]), "/proc/%d", out->wt.pid);
     out->wt.exited = (bool)(!opendir(buf));
+    out->wt.n_events = semdebug_getAllEvSorted(&sd->waiter, out->wt.events);
     out->wt.last_event = out->wt.n_events ?
         &out->wt.events[out->wt.n_events - 1] : NULL;
     
@@ -311,7 +314,6 @@ void semdebug_print_deadlock(struct semdebug *sd, const FULL_STAT *fd, int semgi
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[ Summary ]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n\
 ┃                                                                              ┃\n\
 ┃  TIP: Asterisk (*) marks processes that are still open.                      ┃\n\
-┃                                                                              ┃\n\
 ┃       Check if any open process is waiting for one that's already finished.  ┃\n\
 ┃                                                                              ┃\n";
     const char header_3summary[] = "\

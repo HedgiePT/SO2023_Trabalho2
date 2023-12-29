@@ -114,7 +114,7 @@ int semSignal (int semgid)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int semDown (int semgid, unsigned int sindex)
+int semDown_raw (int semgid, unsigned int sindex)
 {
   struct sembuf down = { 0, -1, 0 };                                                      /* specific down operation */
 
@@ -141,7 +141,7 @@ int semDown (int semgid, unsigned int sindex)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int semUp (int semgid, unsigned int sindex)
+int semUp_raw (int semgid, unsigned int sindex)
 {
   struct sembuf up = { 0, 1, 0 };                                                           /* specific up operation */
 

@@ -146,15 +146,15 @@ int main (int argc, char *argv[])
         perror ("error on creating the semaphore set");
         exit (EXIT_FAILURE);
     }
-    if (semUp (semgid, sh->mutex) == -1) {                   /* enabling access to critical region */
+    if (semUp_raw (semgid, sh->mutex) == -1) {  /* SEMDEBUG */                 /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                   /* enabling access to critical region */
+    if (semUp_raw (semgid, sh->waiterRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp (semgid, sh->receptionistRequestPossible) == -1) {                   /* enabling access to critical region */
+    if (semUp_raw (semgid, sh->receptionistRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
@@ -174,6 +174,9 @@ int main (int argc, char *argv[])
                 perror ("error on the generation of the group process");
                 exit (EXIT_FAILURE);
             }
+#ifdef SEMDEBUG
+        sh->debug.groups[g].pid = pidGR[g];
+#endif
     }
     /* waiter process */
     strcpy (nFicErr + 6, "WT");
@@ -187,6 +190,10 @@ int main (int argc, char *argv[])
             exit (EXIT_FAILURE);
         }
     }
+
+#ifdef SEMDEBUG
+    sh->debug.waiter.pid = pidWT;
+#endif
     /* chef process */
     strcpy (nFicErr + 6, "CH");
     if ((pidCH = fork ()) < 0) {               
@@ -198,7 +205,10 @@ int main (int argc, char *argv[])
             perror ("error on the generation of the chef process");
             exit (EXIT_FAILURE);
         }
-
+#ifdef SEMDEBUG
+    sh->debug.chef.pid = pidCH;
+#endif
+    
     /* receptionist process */
     strcpy (nFicErr + 6, "RT");
     if ((pidRT = fork ()) < 0) {               
@@ -211,6 +221,11 @@ int main (int argc, char *argv[])
             exit (EXIT_FAILURE);
         }
 
+#ifdef SEMDEBUG
+    sh->debug.receptionist.pid = pidRT;
+#endif
+    
+
     /* Timer process */
     int pidTimer = fork();
     if (pidTimer < 0) {
@@ -219,7 +234,7 @@ int main (int argc, char *argv[])
     }
     
     if (pidTimer == 0) {
-        sleep(10);
+        sleep(5);
         exit (EXIT_SUCCESS);
     }
 
