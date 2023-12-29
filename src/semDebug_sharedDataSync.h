@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <sys/sem.h>
 
-#define SEMDEBUG_MAX_EVENTS 10
+#define SEMDEBUG_MAX_EVENTS 20
 #define SEMDEBUG_MAX_REASON 100
 
 struct semdebug_event
@@ -251,8 +251,8 @@ void semdebug_print_deadlock_logs(const struct semdebug_event *ev,
                                   const struct semdebug_event *last,
                                   const FULL_STAT *fd)
 {
-    const char details_divider[] = "\
-┃ ║ ──────────────────── last 10 semaphore operations ────────────────────── ║ ┃\n\
+    const char format_details_divider[] = "\
+┃ ║ ──────────────────── last %2d semaphore operations ────────────────────── ║ ┃\n\
 ┃ ║                          (most recent last)                              ║ ┃\n\
 ┃ ║                                                                          ║ ┃\n";
     const char format_event_log[] = "\
@@ -261,7 +261,7 @@ void semdebug_print_deadlock_logs(const struct semdebug_event *ev,
     const char no_events_captured[] = "\
 ┃ ║ (no events captured)                                                     ║ ┃\n";
     
-    fprintf(stderr, details_divider);
+    fprintf(stderr, format_details_divider, SEMDEBUG_MAX_EVENTS);
 
     if (last)
     {
