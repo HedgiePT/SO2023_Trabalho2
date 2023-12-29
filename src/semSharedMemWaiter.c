@@ -159,26 +159,22 @@ static request waitForClientOrChef()
         exit (EXIT_FAILURE);
     }
 
+
     sh->fSt.waiterRequest.reqType = 0;  // Clear request before receiving new one.
 
-     if (semUp (semgid, sh->waiterRequestPossible) == -1)      {                                             /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
 
-    if (semDown (semgid, sh->waiterRequest) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->waiterRequest, "waiter waits for request");
+
+    req = sh->fSt.waiterRequest;
+
 
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
-
-    req = sh->fSt.waiterRequest;
-
+    
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -200,6 +196,7 @@ static request waitForClientOrChef()
  */
 static void informChef (int n)
 {
+
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -213,19 +210,13 @@ static void informChef (int n)
         exit (EXIT_FAILURE);
     }
 
-    if (semUp (semgid, sh->requestReceived[n]) == -1)                                                   /* exit critical region */
-    { perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->waitOrder, "informs chef that a request can be received");
 
+    semDownOrExit(sh->orderReceived, "waiter waits for chef to receive request");
 
-    if (semUp (semgid, sh->waitOrder) == -1)                                                   /* exit critical region */
-    { perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    int table = sh->fSt.assignedTable[n];
 
-    
-    
+    semUpOrExit(sh->requestReceived[table], "waiter informs that request was received");
 
 }
 
@@ -255,10 +246,9 @@ static void takeFoodToTable (int n)
         exit (EXIT_FAILURE);
     }
 
-    if (semUp (semgid, sh->foodArrived[n]) == -1)  {                                                  /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    int table = sh->fSt.assignedTable[n];
+
+    semUpOrExit(sh->foodArrived[table], "food arrives at the table");
 
 }
 

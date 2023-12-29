@@ -135,10 +135,7 @@ static void waitForOrder ()
 
     //TODO insert your code here
 
-    if (semDown (semgid, sh->waitOrder) == -1) {                                                      /* enter critical region */
-        perror ("error on the down operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->waitOrder, "Chef waits for order");
      
     if (semDown (semgid, sh->mutex) == -1) {                                                     
         perror ("error on the down operation for semaphore access (PT)");
@@ -155,10 +152,7 @@ static void waitForOrder ()
         exit (EXIT_FAILURE);
     }
 
-    if (semUp (semgid, sh->orderReceived) == -1) {                                                      /* exit critical region */
-        perror ("error on the up operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->orderReceived, "Chef can receive order");
 
 
 }
