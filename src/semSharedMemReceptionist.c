@@ -53,6 +53,28 @@ static SHARED_DATA *sh;
 /** \brief receptioninst view on each group evolution (useful to decide table binding) */
 static int groupRecord[MAXGROUPS];
 
+/** \brief more useful view of groupRecord. Student-made. **/
+struct record {
+    unsigned int status;
+    char n_occupied, next_table;
+    int list_begin, list_end;
+    char waitlist[(MAXGROUPS-2) * sizeof(int) / sizeof(char)];
+} *rec = (struct record *)groupRecord;
+
+static int WAITLIST_LENGTH = sizeof(rec->waitlist) / sizeof(rec->waitlist[0]);
+static bool is_table_occupied(int t) { return rec->status & (1 << t); }
+static void set_table_occupied(int t, bool occupied)
+{
+    if (occupied) {
+        rec->status |= (1 << t);
+        rec->n_occupied++;
+        rec->next_table = (t+1) % NUMTABLES;
+    } else {
+        rec->status &= ~(1 << t);
+        rec->n_occupied--;
+    }
+}
+
 
 /** \brief receptionist waits for next request */
 static request waitForGroup ();
@@ -155,9 +177,21 @@ int main (int argc, char *argv[])
  */
 static int decideTableOrWait(int n)
 {
-     //TODO insert your code here
+    if (rec->n_occupied == NUMTABLES)
+        return -1;
 
-     return -1;
+    for (int i = 0; i < NUMTABLES; i++)
+    {
+        int index = (i + rec->next_table) % NUMTABLES;
+        bool occupied = is_table_occupied(index);
+
+        if (occupied)
+            continue;
+        else
+            return index;
+    }
+
+    return -1;
 }
 
 /**
@@ -170,9 +204,15 @@ static int decideTableOrWait(int n)
  */
 static int decideNextGroup()
 {
-     //TODO insert your code here
-
-     return -1;
+    int g = -1;
+    
+    if (sh->fSt.groupsWaiting) {
+        g = rec->waitlist[rec->list_begin];
+        rec->list_begin = (rec->list_begin + 1) % WAITLIST_LENGTH;
+        sh->fSt.groupsWaiting--;
+    }
+    
+    return g;
 }
 
 /**
@@ -188,44 +228,22 @@ static request waitForGroup()
 {
     request ret; 
 
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->mutex, NULL);
+        // No status code provided for "waiting".
+        sh->fSt.st.receptionistStat = 0;
+        saveState(nFic, &(sh->fSt));
+    semUpOrExit(sh->mutex, "state changed to 0 (waiting).");
 
-    // TODO insert your code here
-    
-    sh->fSt.st.receptionistStat = ASSIGNTABLE;
-    saveState(nFic, &(sh->fSt));
-    
-    if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
-    // TODO insert your code here
-
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
-    if (semDown (semgid, sh->receptionistReq) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
-    
-
-    if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
-     perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    // Why was this protected by a mutex?
+    //semDownOrExit(sh->mutex, "idk why teacher left this in.");
+    semDownOrExit(sh->receptionistReq, "before reading request.");
+        ret = sh->fSt.receptionistRequest;
+    semUpOrExit(sh->receptionistRequestPossible, "finished reading request.");
+    //semUpOrExit(sh->mutex, "releasing confused mutex. Why did prof leave this here?");
 
     // TODO insert your code here
 
     return ret;
-
 }
 
 /**
@@ -239,18 +257,21 @@ static request waitForGroup()
  */
 static void provideTableOrWaitingRoom (int n)
 {
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    semDownOrExit(sh->mutex, "changing state.");
+        sh->fSt.st.receptionistStat = ASSIGNTABLE;
+    semUpOrExit(sh->mutex, "new state: ASSIGNTABLE.");
+    
+    int table = decideTableOrWait(n);
+    
+    if (table > -1) {
+        set_table_occupied(table, true);
+        sh->fSt.assignedTable[n] = table;
+        semUpOrExit(sh->waitForTable[n], "assigned table to group.");
+    } else {
+        rec->waitlist[rec->list_end] = n;
+        rec->list_end = (rec->list_end + 1) % WAITLIST_LENGTH;
+        sh->fSt.groupsWaiting++;
     }
-
-    // TODO insert your code here
-
-    if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
 }
 
 /**
@@ -265,18 +286,25 @@ static void provideTableOrWaitingRoom (int n)
 
 static void receivePayment (int n)
 {
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    semDownOrExit(sh->mutex, NULL);
+        sh->fSt.st.receptionistStat = RECVPAY;
+        saveState(nFic, &sh->fSt);
+    semUpOrExit(sh->mutex, "new state: RECVPAY");
+
+    int group = n;
+    int table = sh->fSt.assignedTable[group];
+
+    if (table < 0) {
+        semDownOrExit(sh->mutex, "!!! BUG: Table not found!");
+        sleep(-1);
     }
 
-    // TODO insert your code here
+    sh->fSt.assignedTable[group] = -1;
+    set_table_occupied(table, false);
+    semUpOrExit(sh->tableDone[table], "Signalling payment received");
 
-    if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */
-     perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if ((group = decideNextGroup()) > -1) {
+        provideTableOrWaitingRoom(group);
     }
-
-    // TODO insert your code here
 }
 
