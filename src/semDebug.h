@@ -32,8 +32,8 @@ static void semdebug_logEvent(struct semdebug_buff *ch,
 #ifdef SEMDEBUG_WRITE_TO_STDERR
     char name[100];
     get_semaphore_name(&sh->fSt, index, name, 100);
-    fprintf(stderr, "PID %d %s semaphore ID %d (\"%s\"): %s\n",
-            getpid(), action == SEMDEBUG_DOWN ? : "acquired" : "released", index, name, reason
+    fprintf(stdout, "PID %d %s semaphore ID %d (\"%s\"): %s\n",
+            getpid(), action == SEMDEBUG_DOWN ? "acquired" : "released", index, name, reason
     );
 #endif
 }
