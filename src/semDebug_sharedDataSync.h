@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <sys/sem.h>
 
-#define SEMDEBUG_MAX_EVENTS 20
+#define SEMDEBUG_MAX_EVENTS 150
 #define SEMDEBUG_MAX_REASON 100
 
 struct semdebug_event

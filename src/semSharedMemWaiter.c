@@ -145,41 +145,27 @@ static request waitForClientOrChef()
 {
     request req;
  
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit(sh->mutex, "pre-WAIT_FOR_REQUEST");
 
     sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
     saveState(nFic, &(sh->fSt));
 
     
-    if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
-
-    sh->fSt.waiterRequest.reqType = 0;  // Clear request before receiving new one.
-
-    semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
-
-    semDownOrExit(sh->waiterRequest, "waiter waits for request");
-
-    req = sh->fSt.waiterRequest;
-
-
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
-
+    semUpOrExit (sh->mutex, "WAIT_FOR_REQUEST & state saved.");
     
 
-    if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
+    semDownOrExit(sh->waiterRequest, "waiter waits for request");
+
+
+    semDownOrExit (sh->mutex, "pre-req saved");
+
+    req = sh->fSt.waiterRequest;
+    sh->fSt.waiterRequest.reqType = 0;
+    
+
+    semUpOrExit (sh->mutex, "req saved");
+
 
     return req;
 
@@ -196,27 +182,20 @@ static request waitForClientOrChef()
  */
 static void informChef (int n)
 {
+   
 
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit(sh->requestReceived[sh->fSt.foodOrder], "waiter informs that request was received");
+
+    semDownOrExit(sh->mutex, "pre-INFORM_CHEF");
 
     sh->fSt.st.waiterStat = INFORM_CHEF;
     saveState(nFic, &(sh->fSt));
     
-    if (semUp (semgid, sh->mutex) == -1)                                                   /* exit critical region */
-    { perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit (sh->mutex, "INFORM_CHEF & state saved.");
 
     semUpOrExit(sh->waitOrder, "informs chef that a request can be received");
 
     semDownOrExit(sh->orderReceived, "waiter waits for chef to receive request");
-
-    int table = sh->fSt.assignedTable[n];
-
-    semUpOrExit(sh->requestReceived[table], "waiter informs that request was received");
 
 }
 
@@ -232,23 +211,16 @@ static void informChef (int n)
 static void takeFoodToTable (int n)
 {
 
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semDownOrExit (sh->mutex, "pre-TAKE_TO_TABLE");
 
     sh->fSt.st.waiterStat = TAKE_TO_TABLE;
     saveState(nFic, &(sh->fSt));
     
     
-    if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    semUpOrExit (sh->mutex, "TAKE_TO_TABLE & state saved.");
 
-    int table = sh->fSt.assignedTable[n];
 
-    semUpOrExit(sh->foodArrived[table], "food arrives at the table");
+    semUpOrExit(sh->foodArrived[n], "food arrives at the table");
 
 }
 
