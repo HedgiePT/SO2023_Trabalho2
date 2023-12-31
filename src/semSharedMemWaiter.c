@@ -146,27 +146,17 @@ static request waitForClientOrChef()
     request req;
  
     semDownOrExit(sh->mutex, "pre-WAIT_FOR_REQUEST");
-
     sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
     saveState(nFic, &(sh->fSt));
-
-    
     semUpOrExit (sh->mutex, "WAIT_FOR_REQUEST & state saved.");
 
     semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
     semDownOrExit(sh->waiterRequest, "waiter waits for request");
 
-    
+    // For debugging purposes only.
+    sh->fSt.foodGroup = sh->fSt.waiterRequest.reqGroup;
 
-    semDownOrExit (sh->mutex, "pre-req saved");
-
-    req = sh->fSt.waiterRequest;  
-    sh->fSt.waiterRequest.reqType = 0;
-    sh->fSt.waiterRequest.reqGroup = 0;
-
-    semUpOrExit (sh->mutex, "req saved");
-
-
+    req = sh->fSt.waiterRequest;
     return req;
 
 }
@@ -181,22 +171,17 @@ static request waitForClientOrChef()
  *
  */
 static void informChef (int n)
-{   
-    
-    semUpOrExit(sh->requestReceived[sh->fSt.assignedTable[n]], "waiter informs that request was received");
-
+{
     semDownOrExit(sh->mutex, "pre-INFORM_CHEF");
-
-    sh->fSt.foodGroup = n;
-    sh->fSt.st.waiterStat = INFORM_CHEF;
-    saveState(nFic, &(sh->fSt));
-    
+        sh->fSt.st.waiterStat = INFORM_CHEF;
+        saveState(nFic, &(sh->fSt));
     semUpOrExit (sh->mutex, "INFORM_CHEF & state saved.");
 
-    semUpOrExit(sh->waitOrder, "informs chef that a request can be received");
+    semUpOrExit(sh->waitOrder, "we have an order for chef");
 
     semDownOrExit(sh->orderReceived, "waiter waits for chef to receive request");
-
+    int table = sh->fSt.assignedTable[n];
+    semUpOrExit(sh->requestReceived[table], "waiter informs that request was received");
 }
 
 /**
@@ -212,15 +197,12 @@ static void informChef (int n)
 
 static void takeFoodToTable (int n)
 {
-
     semDownOrExit (sh->mutex, "pre-TAKE_TO_TABLE");
-
-    sh->fSt.st.waiterStat = TAKE_TO_TABLE;
-    saveState(nFic, &(sh->fSt));
-    
+        sh->fSt.st.waiterStat = TAKE_TO_TABLE;
+        saveState(nFic, &(sh->fSt));
+        int table = sh->fSt.assignedTable[n];
     semUpOrExit (sh->mutex, "TAKE_TO_TABLE & state saved.");
 
-    semUpOrExit(sh->foodArrived[sh->fSt.assignedTable[sh->fSt.foodGroup]], "food arrives at the table");
-
+    semUpOrExit(sh->foodArrived[table], "food arrives at the table");
 }
 

@@ -236,7 +236,7 @@ static request waitForGroup()
 
     // Why was this protected by a mutex?
     //semDownOrExit(sh->mutex, "idk why teacher left this in.");
-    semDownOrExit(sh->receptionistReq, "before reading request.");
+    semDownOrExit(sh->receptionistReq, "waiting for requests.");
         ret = sh->fSt.receptionistRequest;
     semUpOrExit(sh->receptionistRequestPossible, "finished reading request.");
     //semUpOrExit(sh->mutex, "releasing confused mutex. Why did prof leave this here?");
@@ -257,8 +257,9 @@ static request waitForGroup()
  */
 static void provideTableOrWaitingRoom (int n)
 {
-    semDownOrExit(sh->mutex, "changing state.");
+    semDownOrExit(sh->mutex, NULL);
         sh->fSt.st.receptionistStat = ASSIGNTABLE;
+        saveState(nFic, &(sh->fSt));
     semUpOrExit(sh->mutex, "new state: ASSIGNTABLE.");
     
     int table = decideTableOrWait(n);
