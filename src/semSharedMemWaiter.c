@@ -170,6 +170,8 @@ static request waitForClientOrChef()
             // Wait for incoming request.
             semDownOrExit(sh->waiterRequest, "waiting for incoming requests");
             const request incoming = sh->fSt.waiterRequest;
+            semUpOrExit(sh->waiterRequestPossible,
+                        "signalling new requests are possible");
 
             if (incoming.reqType == FOODREQ) {
                 queue[qwrite_next] = incoming;
@@ -181,8 +183,6 @@ static request waitForClientOrChef()
                 semDownOrExit(sh->mutex, "!!! BUG: Wrong request.");
                 sleep(-1);
             }
-            semUpOrExit(sh->waiterRequestPossible,
-                        "signalling new requests are possible");
         }
     }
 
