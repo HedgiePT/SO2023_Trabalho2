@@ -100,7 +100,7 @@ int get_semaphore_name(const FULL_STAT *fd, unsigned int index,
 
     switch (index)
     {
-        case 0: s = "NULL (unused)"; break;
+        case 0: s = "NULL (bug!)"; break;
         case 1: s = "mutex"; break;
         case 2: s = "receptionistReq"; break;
         case 3: s = "receptionistRequestPossible"; break;
@@ -430,24 +430,24 @@ void semdebug_print_deadlock(struct semdebug *sd, const FULL_STAT *fd, int semgi
      const char format_summary_extrainfo[] = "\
 ┃   ╔═══ Waiter request ═══╗  ╔═══ Other info ═══════╗                         ┃\n\
 ┃   ║  type: %-9s (%d) ║  ║        nGroups: %d    ║                         ┃\n\
-┃   ║ %5s: %d             ║  ║  groupsWaiting: %d    ║                         ┃\n\
+┃   ║ group: %d             ║  ║  groupsWaiting: %d    ║                         ┃\n\
 ┃   ╚══════════════════════╝  ║      foodOrder: %d    ║                         ┃\n\
 ┃   ╔═══ Recep. request ═══╗  ║      foodGroup: %d    ║                         ┃\n\
 ┃   ║  type: %-9s (%d) ║  ╚══════════════════════╝                         ┃\n\
-┃   ║ group: %d             ║                                                   ┃\n\
+┃   ║ %s: %d             ║                                                   ┃\n\
 ┃   ╚══════════════════════╝                                                   ┃\n";
 
      fprintf(stderr, format_summary_extrainfo,
              get_request_label(fd->waiterRequest.reqType),  // Waiter request
              fd->waiterRequest.reqType,                     // Waiter request
              fd->nGroups,                                   // nGroups
-             fd->waiterRequest.reqType == TABLEREQ ? "group" : "table",
              fd->waiterRequest.reqGroup,
              fd->groupsWaiting,
              fd->foodOrder,
              fd->foodGroup,
              get_request_label(fd->receptionistRequest.reqType),
              fd->receptionistRequest.reqType,
+             fd->receptionistRequest.reqType == TABLEREQ ? "group" : "table",
              fd->receptionistRequest.reqGroup
      );
      

@@ -19,6 +19,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <assert.h>
+#include "semaphore.h"
 
 // TODO: ***DEBUG***! Eliminar estas linhas antes de enviar para o prof.
 #include <unistd.h>
@@ -114,7 +115,7 @@ int semSignal (int semgid)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int semDown_raw (int semgid, unsigned int sindex)
+int SEMDOWN (int semgid, unsigned int sindex)
 {
   struct sembuf down = { 0, -1, 0 };                                                      /* specific down operation */
 
@@ -141,7 +142,7 @@ int semDown_raw (int semgid, unsigned int sindex)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int semUp_raw (int semgid, unsigned int sindex)
+int SEMUP (int semgid, unsigned int sindex)
 {
   struct sembuf up = { 0, 1, 0 };                                                           /* specific up operation */
 

@@ -69,6 +69,7 @@ int main (int argc, char *argv[])
     int status,                                                                                    /* execution status */
         info;                                                                                               /* info id */
     int g, t;
+    int ret = EXIT_SUCCESS;
 
     /* getting log file name */
     if(argc==2) {
@@ -146,15 +147,18 @@ int main (int argc, char *argv[])
         perror ("error on creating the semaphore set");
         exit (EXIT_FAILURE);
     }
-    if (semUp_raw (semgid, sh->mutex) == -1) {  /* SEMDEBUG */                 /* enabling access to critical region */
+#ifdef SEMDEBUG
+#define semUp semUp_raw
+#endif
+    if (semUp (semgid, sh->mutex) == -1) {  /* SEMDEBUG */                 /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp_raw (semgid, sh->waiterRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
+    if (semUp (semgid, sh->waiterRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp_raw (semgid, sh->receptionistRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
+    if (semUp (semgid, sh->receptionistRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
@@ -252,12 +256,19 @@ int main (int argc, char *argv[])
             perror ("error on aiting for an intervening process");
             exit (EXIT_FAILURE);
         } else if (info == pidTimer) {
+#ifdef SEMDEBUG
             /* We're in a deadlock. */
             semdebug_print_deadlock(&sh->debug, &sh->fSt, semgid);
             
-            kill(pidCH, SIGTERM); kill(pidWT, SIGTERM); kill(pidRT, SIGTERM);
-            for (int i = 0; i < sh->fSt.nGroups; i++) kill(pidGR[i], SIGTERM);
+            kill(pidCH, SIGTERM);
+            kill(pidWT, SIGTERM);
+            kill(pidRT, SIGTERM);
+            for (int i = 0; i < sh->fSt.nGroups; i++)
+                kill(pidGR[i], SIGTERM);
+
+            ret = EXIT_FAILURE;
             break;
+#endif
         }
         m += 1;
     } while (m < 3+sh->fSt.nGroups);
@@ -278,5 +289,5 @@ int main (int argc, char *argv[])
         exit (EXIT_FAILURE);
     }
 
-    return EXIT_SUCCESS;
+    return ret;
 }
