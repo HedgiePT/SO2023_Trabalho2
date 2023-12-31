@@ -15,4 +15,9 @@ for i in $(seq 1 $n)
 do
      echo -e "\n\e[34;1mRun n.º $i\e[0m"
      ./probSemSharedMemRestaurant
+     ret=$?
+     if [[ "$ret" -ne "0" ]]; then
+          echo "Sequence failed on run $i."
+          exit $((ret));
+     fi
 done
