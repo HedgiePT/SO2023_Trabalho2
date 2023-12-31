@@ -152,17 +152,17 @@ static request waitForClientOrChef()
 
     
     semUpOrExit (sh->mutex, "WAIT_FOR_REQUEST & state saved.");
-    
 
     semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
     semDownOrExit(sh->waiterRequest, "waiter waits for request");
 
+    
 
     semDownOrExit (sh->mutex, "pre-req saved");
 
-    req = sh->fSt.waiterRequest;
+    req = sh->fSt.waiterRequest;  
     sh->fSt.waiterRequest.reqType = 0;
-    
+    sh->fSt.waiterRequest.reqGroup = 0;
 
     semUpOrExit (sh->mutex, "req saved");
 
@@ -181,13 +181,13 @@ static request waitForClientOrChef()
  *
  */
 static void informChef (int n)
-{
-   
-
-    semUpOrExit(sh->requestReceived[sh->fSt.foodOrder], "waiter informs that request was received");
+{   
+    
+    semUpOrExit(sh->requestReceived[sh->fSt.assignedTable[n]], "waiter informs that request was received");
 
     semDownOrExit(sh->mutex, "pre-INFORM_CHEF");
 
+    sh->fSt.foodGroup = n;
     sh->fSt.st.waiterStat = INFORM_CHEF;
     saveState(nFic, &(sh->fSt));
     
@@ -208,6 +208,8 @@ static void informChef (int n)
  *
  */
 
+
+
 static void takeFoodToTable (int n)
 {
 
@@ -216,11 +218,9 @@ static void takeFoodToTable (int n)
     sh->fSt.st.waiterStat = TAKE_TO_TABLE;
     saveState(nFic, &(sh->fSt));
     
-    
     semUpOrExit (sh->mutex, "TAKE_TO_TABLE & state saved.");
 
-
-    semUpOrExit(sh->foodArrived[n], "food arrives at the table");
+    semUpOrExit(sh->foodArrived[sh->fSt.assignedTable[sh->fSt.foodGroup]], "food arrives at the table");
 
 }
 
