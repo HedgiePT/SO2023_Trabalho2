@@ -139,18 +139,10 @@ static void waitForOrder ()
 
     lastGroup = -1;
 
-    request req;
-    while (true) {
-        semDownOrExit(sh->waitOrder, "waiting for orders");
-            req = sh->fSt.waiterRequest;
-        semUpOrExit(sh->orderReceived, "order received successfully");
-        printf("req type=%d group=%d\n", req.reqType, req.reqGroup);
 
-        if (req.reqType == FOODREQ) {
-            lastGroup = req.reqGroup;
-            break;
-        }
-    }
+    semDownOrExit(sh->waitOrder, "waiting for orders");
+        lastGroup = sh->fSt.foodGroup;
+    semUpOrExit(sh->orderReceived, "order received successfully");
 }
 
 /**
@@ -178,11 +170,14 @@ static void processOrder ()
         saveState(nFic, &sh->fSt);
     semUpOrExit(sh->mutex, "REST after cooking & state saved.");
 
+    // char fmt[] = "food ready (group %d), waiting for waiter";
+    // char buffer[100];
+    // snprintf(buffer, 100, fmt, lastGroup);
+
     semDownOrExit(sh->waiterRequestPossible, "food ready, waiting for waiter");
-        sh->fSt.waiterRequest.reqType = FOODREADY;
-        sh->fSt.waiterRequest.reqGroup = lastGroup;
-        sh->fSt.foodOrder++;    // For debugging. Counts delivered orders.
-        lastGroup = -1; // invalidate internal variable to help catch bugs.
+        sh->fSt.waiterRequest = (request) { FOODREADY, lastGroup };
+        //sh->fSt.waiterRequest.reqGroup = lastGroup;
+        lastGroup = 0xFFFF; // invalidate internal variable to help catch bugs.
     semUpOrExit(sh->waiterRequest, "signalling food delivered to waiter");
     //TODO insert your code here
 }

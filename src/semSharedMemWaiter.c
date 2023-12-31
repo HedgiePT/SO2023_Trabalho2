@@ -143,22 +143,50 @@ int main (int argc, char *argv[])
  */
 static request waitForClientOrChef()
 {
-    request req;
- 
-    semDownOrExit(sh->mutex, "pre-WAIT_FOR_REQUEST");
-    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
-    saveState(nFic, &(sh->fSt));
-    semUpOrExit (sh->mutex, "WAIT_FOR_REQUEST & state saved.");
+    // A request queue to hold onto while chef cooks.
+    static request queue[NUMTABLES];
+    static size_t qlength = 0, qread_next = 0, qwrite_next = 0;
 
-    semUpOrExit(sh->waiterRequestPossible, "waiter signals new requests are possible");
-    semDownOrExit(sh->waiterRequest, "waiter waits for request");
+    // If chef is already tasked with an order.
+    const bool chef_is_busy = sh->fSt.foodOrder;
 
-    // For debugging purposes only.
-    sh->fSt.foodGroup = sh->fSt.waiterRequest.reqGroup;
+    // Return value.
+    request outgoing = { -1, -1 };
 
-    req = sh->fSt.waiterRequest;
-    return req;
 
+    while (outgoing.reqType == -1) {
+        if (qlength > 0 && !chef_is_busy) {
+            outgoing = queue[qread_next];
+            qread_next = (qread_next + 1) % NUMTABLES;
+            qlength--;
+        } else {
+            if (sh->fSt.st.waiterStat != WAIT_FOR_REQUEST) {
+                semDownOrExit(sh->mutex, "pre-WAIT_FOR_REQUEST");
+                    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
+                    saveState(nFic, &(sh->fSt));
+                semUpOrExit (sh->mutex, "WAIT_FOR_REQUEST & state saved.");
+            }
+
+            // Wait for incoming request.
+            semDownOrExit(sh->waiterRequest, "waiting for incoming requests");
+            const request incoming = sh->fSt.waiterRequest;
+
+            if (incoming.reqType == FOODREQ) {
+                queue[qwrite_next] = incoming;
+                qwrite_next = (qwrite_next + 1) % NUMTABLES;
+                qlength++;
+            } else if (incoming.reqType == FOODREADY) {
+                outgoing = incoming;
+            } else {
+                semDownOrExit(sh->mutex, "!!! BUG: Wrong request.");
+                sleep(-1);
+            }
+            semUpOrExit(sh->waiterRequestPossible,
+                        "signalling new requests are possible");
+        }
+    }
+
+    return outgoing;
 }
 
 /**
@@ -173,6 +201,8 @@ static request waitForClientOrChef()
 static void informChef (int n)
 {
     semDownOrExit(sh->mutex, "pre-INFORM_CHEF");
+        sh->fSt.foodGroup = n;
+        sh->fSt.foodOrder = true;
         sh->fSt.st.waiterStat = INFORM_CHEF;
         saveState(nFic, &(sh->fSt));
     semUpOrExit (sh->mutex, "INFORM_CHEF & state saved.");
@@ -202,6 +232,8 @@ static void takeFoodToTable (int n)
         saveState(nFic, &(sh->fSt));
         int table = sh->fSt.assignedTable[n];
     semUpOrExit (sh->mutex, "TAKE_TO_TABLE & state saved.");
+
+    sh->fSt.foodOrder = false;
 
     semUpOrExit(sh->foodArrived[table], "food arrives at the table");
 }
