@@ -20,10 +20,6 @@
 #include "probConst.h"
 #include "probDataStruct.h"
 
-
-// By the students.
-#include "semDebug_sharedDataSync.h"
-
 /**
  *  \brief Definition of <em>shared information</em> data type.
  */
@@ -54,10 +50,6 @@ typedef struct
           unsigned int foodArrived[NUMTABLES];
           /** \brief identification of semaphore used by groups to wait for payment completed – val = 0 */
           unsigned int tableDone[NUMTABLES];
-#ifdef SEMDEBUG
-          struct semdebug debug;
-#endif
-
         } SHARED_DATA;
 
 /** \brief number of semaphores in the set */

@@ -19,11 +19,6 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <assert.h>
-#include "semaphore.h"
-
-// TODO: ***DEBUG***! Eliminar estas linhas antes de enviar para o prof.
-#include <unistd.h>
-// TODO: ***/DEBUG***
 
 /** \brief access permission: user r-w */
 #define  MASK           0600
@@ -115,16 +110,10 @@ int semSignal (int semgid)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int SEMDOWN (int semgid, unsigned int sindex)
+int semDown (int semgid, unsigned int sindex)
 {
   struct sembuf down = { 0, -1, 0 };                                                      /* specific down operation */
 
-  // ***DEBUG***
-  if (sindex == 0) {
-    fprintf(stderr, "PID %d: WARNING: semDown called with sindex == 0.\n", getpid());
-    sleep(-1);
-  }
-  // ***/DEBUG***
   assert(sindex>0);
   down.sem_num = (unsigned short) sindex;
   return semop (semgid, &down, 1);
@@ -142,7 +131,7 @@ int SEMDOWN (int semgid, unsigned int sindex)
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-int SEMUP (int semgid, unsigned int sindex)
+int semUp (int semgid, unsigned int sindex)
 {
   struct sembuf up = { 0, 1, 0 };                                                           /* specific up operation */
 

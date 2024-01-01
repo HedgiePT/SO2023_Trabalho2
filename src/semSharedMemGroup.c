@@ -106,10 +106,6 @@ int main (int argc, char *argv[])
     /* initialize random generator */
     srandom ((unsigned int) getpid ());                                                 
 
-#ifdef SEMDEBUG
-    semdebug_init(&sh->debug.groups[n]);
-#endif
-
     /* simulation of the life cycle of the group */
     goToRestaurant(n);
     checkInAtReception(n);

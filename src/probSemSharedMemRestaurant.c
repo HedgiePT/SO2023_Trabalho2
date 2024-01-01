@@ -31,8 +31,6 @@
 #include "semaphore.h"
 #include "sharedMemory.h"
 
-#include "semDebug_sharedDataSync.h"
-
 /** \brief name of chef process */
 #define   CHEF               "./chef"
 
@@ -44,8 +42,6 @@
 
 /** \brief name of chef process */
 #define   RECEPTIONIST       "./receptionist"
-
-
 /**
  *  \brief Main program.
  *
@@ -69,7 +65,6 @@ int main (int argc, char *argv[])
     int status,                                                                                    /* execution status */
         info;                                                                                               /* info id */
     int g, t;
-    int ret = EXIT_SUCCESS;
 
     /* getting log file name */
     if(argc==2) {
@@ -147,18 +142,15 @@ int main (int argc, char *argv[])
         perror ("error on creating the semaphore set");
         exit (EXIT_FAILURE);
     }
-#ifdef SEMDEBUG
-#define semUp semUp_raw
-#endif
-    if (semUp (semgid, sh->mutex) == -1) {  /* SEMDEBUG */                 /* enabling access to critical region */
+    if (semUp (semgid, sh->mutex) == -1) {                   /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp (semgid, sh->waiterRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
+    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                   /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    if (semUp (semgid, sh->receptionistRequestPossible) == -1) {  /* SEMDEBUG */                  /* enabling access to critical region */
+    if (semUp (semgid, sh->receptionistRequestPossible) == -1) {                   /* enabling access to critical region */
         perror ("error on executing the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
@@ -178,9 +170,6 @@ int main (int argc, char *argv[])
                 perror ("error on the generation of the group process");
                 exit (EXIT_FAILURE);
             }
-#ifdef SEMDEBUG
-        sh->debug.groups[g].pid = pidGR[g];
-#endif
     }
     /* waiter process */
     strcpy (nFicErr + 6, "WT");
@@ -194,10 +183,6 @@ int main (int argc, char *argv[])
             exit (EXIT_FAILURE);
         }
     }
-
-#ifdef SEMDEBUG
-    sh->debug.waiter.pid = pidWT;
-#endif
     /* chef process */
     strcpy (nFicErr + 6, "CH");
     if ((pidCH = fork ()) < 0) {               
@@ -209,10 +194,7 @@ int main (int argc, char *argv[])
             perror ("error on the generation of the chef process");
             exit (EXIT_FAILURE);
         }
-#ifdef SEMDEBUG
-    sh->debug.chef.pid = pidCH;
-#endif
-    
+
     /* receptionist process */
     strcpy (nFicErr + 6, "RT");
     if ((pidRT = fork ()) < 0) {               
@@ -224,23 +206,6 @@ int main (int argc, char *argv[])
             perror ("error on the generation of the receptionist process");
             exit (EXIT_FAILURE);
         }
-
-#ifdef SEMDEBUG
-    sh->debug.receptionist.pid = pidRT;
-#endif
-    
-
-    /* Timer process */
-    int pidTimer = fork();
-    if (pidTimer < 0) {
-        perror ("error on the generation of the timer process");
-        exit (EXIT_FAILURE);
-    }
-    
-    if (pidTimer == 0) {
-        sleep(5);
-        exit (EXIT_SUCCESS);
-    }
 
     /* signaling start of operations */
     if (semSignal (semgid) == -1) {
@@ -255,25 +220,9 @@ int main (int argc, char *argv[])
         if (info == -1) { 
             perror ("error on aiting for an intervening process");
             exit (EXIT_FAILURE);
-        } else if (info == pidTimer) {
-#ifdef SEMDEBUG
-            /* We're in a deadlock. */
-            semdebug_print_deadlock(&sh->debug, &sh->fSt, semgid);
-            
-            kill(pidCH, SIGTERM);
-            kill(pidWT, SIGTERM);
-            kill(pidRT, SIGTERM);
-            for (int i = 0; i < sh->fSt.nGroups; i++)
-                kill(pidGR[i], SIGTERM);
-
-            ret = EXIT_FAILURE;
-            break;
-#endif
         }
         m += 1;
     } while (m < 3+sh->fSt.nGroups);
-    
-    kill(pidTimer, SIGTERM);
 
     /* destruction of semaphore set and shared region */
     if (semDestroy (semgid) == -1) {
@@ -289,5 +238,5 @@ int main (int argc, char *argv[])
         exit (EXIT_FAILURE);
     }
 
-    return ret;
+    return EXIT_SUCCESS;
 }

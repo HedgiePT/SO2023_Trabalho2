@@ -71,14 +71,6 @@ extern int semDestroy (int semgid);
 
 extern int semSignal (int semgid);
 
-#ifdef SEMDEBUG
-#define SEMDOWN semDown_raw
-#define SEMUP semUp_raw
-#else
-#define SEMDOWN semDown
-#define SEMUP semUp
-#endif
-
 /**
  *  \brief <em>Down</em> of a semaphore within the set.
  *
@@ -91,7 +83,7 @@ extern int semSignal (int semgid);
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-extern int SEMDOWN (int semgid, unsigned int sindex);
+extern int semDown (int semgid, unsigned int sindex);
 
 /**
  *  \brief <em>Up</em> of a semaphore within the set.
@@ -105,6 +97,6 @@ extern int SEMDOWN (int semgid, unsigned int sindex);
  *  \return -\c 1, when an error occurs (the actual situation is reported in <tt>errno</tt>)
  */
 
-extern int SEMUP (int semgid, unsigned int sindex);
+extern int semUp (int semgid, unsigned int sindex);
 
 #endif /* SEMAPHORE_H_ */

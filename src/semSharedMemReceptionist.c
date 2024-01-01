@@ -130,10 +130,6 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-#ifdef SEMDEBUG
-    semdebug_init(&sh->debug.receptionist);
-#endif
-
     /* initialize random generator */
     srandom ((unsigned int) getpid ());              
 
