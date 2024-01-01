@@ -154,6 +154,7 @@ int main (int argc, char *argv[])
                    break;
             case BILLREQ:
                    receivePayment(req.reqGroup);
+                   sleep(-1);
                    break;
         }
         nReq++;
@@ -234,14 +235,9 @@ static request waitForGroup()
         saveState(nFic, &(sh->fSt));
     semUpOrExit(sh->mutex, "state changed to 0 (waiting).");
 
-    // Why was this protected by a mutex?
-    //semDownOrExit(sh->mutex, "idk why teacher left this in.");
     semDownOrExit(sh->receptionistReq, "waiting for requests.");
         ret = sh->fSt.receptionistRequest;
     semUpOrExit(sh->receptionistRequestPossible, "finished reading request.");
-    //semUpOrExit(sh->mutex, "releasing confused mutex. Why did prof leave this here?");
-
-    // TODO insert your code here
 
     return ret;
 }

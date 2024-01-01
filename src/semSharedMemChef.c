@@ -170,15 +170,10 @@ static void processOrder ()
         saveState(nFic, &sh->fSt);
     semUpOrExit(sh->mutex, "REST after cooking & state saved.");
 
-    // char fmt[] = "food ready (group %d), waiting for waiter";
-    // char buffer[100];
-    // snprintf(buffer, 100, fmt, lastGroup);
 
     semDownOrExit(sh->waiterRequestPossible, "food ready, waiting for waiter");
         sh->fSt.waiterRequest = (request) { FOODREADY, lastGroup };
-        //sh->fSt.waiterRequest.reqGroup = lastGroup;
         lastGroup = 0xFFFF; // invalidate internal variable to help catch bugs.
     semUpOrExit(sh->waiterRequest, "signalling food delivered to waiter");
-    //TODO insert your code here
 }
 
