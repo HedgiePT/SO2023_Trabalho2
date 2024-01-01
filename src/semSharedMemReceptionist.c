@@ -154,7 +154,6 @@ int main (int argc, char *argv[])
                    break;
             case BILLREQ:
                    receivePayment(req.reqGroup);
-                   sleep(-1);
                    break;
         }
         nReq++;
