@@ -56,9 +56,9 @@ static int groupRecord[MAXGROUPS];
 /** \brief more useful view of groupRecord. Student-made. **/
 struct record {
     unsigned int status;
-    char n_occupied, next_table;
+    unsigned char n_occupied, next_table;
     int list_begin, list_end;
-    char waitlist[(MAXGROUPS-2) * sizeof(int) / sizeof(char)];
+    unsigned char waitlist[(MAXGROUPS-2) * sizeof(int) / sizeof(char)];
 } *rec = (struct record *)groupRecord;
 
 static int WAITLIST_LENGTH = sizeof(rec->waitlist) / sizeof(rec->waitlist[0]);
